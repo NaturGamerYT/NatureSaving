@@ -1,0 +1,25 @@
+{
+  "name": "naturesaving",
+  "version": "0.0.1",
+  "description": "Local Data saving",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "url": ""
+  },
+  "scripts": {
+    "build": "tsup"
+  },
+  "keywords": [
+    "database",
+    "saving",
+    "db"
+  ],
+  "author": "naturgamer_yt",
+  "license": "MIT",
+  "devDependencies": {
+    "tsup": "^8.1.0",
+    "typescript": "^5.5.3"
+  }
+}
