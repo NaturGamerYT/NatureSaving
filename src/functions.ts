@@ -1,4 +1,4 @@
-import { getLocalServerProps, localServerProps, readDataProps, saveDataProps, SayHelloProps } from "./types";
+import { getLocalServerProps, localServerProps, readDataProps, saveDataProps, SayHelloProps, searchDataProps } from "./types";
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -8,7 +8,7 @@ interface ServerInfo {
     status: 'init' | 'running' | 'stopped';
 }
 
-const servers: ServerInfo[] = [];
+let servers: ServerInfo[] = [];
 
 export function sayHello({ firstName }: SayHelloProps) {
     if (firstName) {
@@ -21,6 +21,7 @@ export function sayHello({ firstName }: SayHelloProps) {
 export class LocalServer {
     private name: string;
     private pathdir: string;
+    private status: string;
 
     constructor({ name, pathdir }: localServerProps) {
         if (!name) {
@@ -37,6 +38,7 @@ export class LocalServer {
         };
         this.name = name;
         this.pathdir = pathdir;
+        this.status = 'init'
 
         const init: ServerInfo = {
             name: this.name,
@@ -54,6 +56,7 @@ export class LocalServer {
         const index = servers.findIndex(server => server.name === this.name);
         if (index !== -1) {
             servers[index].status = 'running';
+            this.status = 'running';
             console.log(`[NatureSaving] Starting server ${this.name} with path: ${path.resolve(this.pathdir)}`);
         } else {
             console.error(`[NatureSaving] Server ${this.name} not found`);
@@ -65,6 +68,7 @@ export class LocalServer {
         const index = servers.findIndex(server => server.name === this.name);
         if (index !== -1) {
             servers[index].status = 'stopped';
+            this.status = 'stopped';
             console.log(`[NatureSaving] Stopping server ${this.name} with path: ${path.resolve(this.pathdir)}`);
         } else {
             console.error(`[NatureSaving] Server ${this.name} not found`);
@@ -138,7 +142,7 @@ export function saveData({ server, schema, data }: saveDataProps) {
         throw new Error('[NatureSaving] Data does not match schema');
     }
 
-    const filePath = path.join(server.path, `${schema.name}.js`);
+    const filePath = path.join(server.pathdir, `${schema.name}.js`);
     let existingData: any[] = [];
 
     if (fs.existsSync(filePath)) {
@@ -185,7 +189,7 @@ export function readData({ server, schema }: readDataProps) {
         return null;
     }
 
-    const filePath = path.join(server.path, `${schema.name}.js`);
+    const filePath = path.join(server.pathdir, `${schema.name}.js`);
     let existingData: any[] = [];
 
     if (fs.existsSync(filePath)) {
@@ -200,4 +204,53 @@ export function readData({ server, schema }: readDataProps) {
             console.error('[NatureSaving] Could not read existing data file:', error);
         }
     }
+}
+
+export function findData({ server, schema, data }: searchDataProps) {
+    if (!server) {
+        throw new Error('[NatureSaving] Server object from getLocalServer is not defined or missing');
+    }
+
+    if (!server.name) {
+        throw new Error('[NatureSaving] Database does not exist');
+    }
+
+    if (server.status !== 'running') {
+        console.error('[NatureSaving] Database is not running. Please start the database.');
+        return null;
+    }
+
+    if (!schema) {
+        throw new Error('[NatureSaving] Schema is not defined or missing');
+    }
+
+    if (!data) {
+        throw new Error('[NatureSaving] Data is not defined or missing');
+    }
+
+    // if (!validateDataAgainstSchema(schema, data)) {
+    //     throw new Error('[NatureSaving] Data does not match schema');
+    // }
+
+    const filePath = path.join(server.pathdir, `${schema.name}.js`);
+    let existingData: any[] = [];
+
+    if (fs.existsSync(filePath)) {
+        try {
+            const fileContent = fs.readFileSync(filePath, 'utf8');
+            const dataMatch = fileContent.match(/const data = (\[.*\]);\s*module\.exports = data;/s);
+            if (dataMatch && dataMatch[1]) {
+                existingData = JSON.parse(dataMatch[1]);
+            }
+        } catch (error) {
+            console.error('[NatureSaving] Could not read existing data file:', error);
+        }
+    }
+
+    const searchKeys = Object.keys(data);
+    const searchData = existingData.filter(item =>
+        searchKeys.every(key => item[key] === data[key])
+    );
+
+    return searchData;
 }
