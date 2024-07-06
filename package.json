@@ -19,6 +19,9 @@
   "author": "naturgamer_yt",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^20.14.9",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
     "tsup": "^8.1.0",
     "typescript": "^5.5.3"
   }
