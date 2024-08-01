@@ -3,7 +3,7 @@ export type SayHelloProps = {
 };
 
 export type localServerProps = {
-    pathdir: string;
+    path: string;
     name: string;
 };
 
@@ -15,7 +15,7 @@ export type saveDataProps = {
     server: {
         name: string;
         status: string;
-        pathdir: string;
+        path: string;
     };
     schema: {
         name: string;
@@ -28,7 +28,7 @@ export type readDataProps = {
     server: {
         name: string;
         status: string;
-        pathdir: string;
+        path: string;
     };
     schema: {
         name: string;
@@ -37,7 +37,7 @@ export type readDataProps = {
 };
 
 export type searchDataProps = {
-    server: { name: string; status: string; pathdir: string };
+    server: { name: string; status: string; path: string };
     schema: { name: string; schema: Record<string, any>; };
     data: { [key: string]: any };
 };

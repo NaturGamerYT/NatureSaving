@@ -1,12 +1,7 @@
 import { getLocalServerProps, localServerProps, readDataProps, saveDataProps, SayHelloProps, searchDataProps } from "./types";
+import { ServerInfo } from "./interfaces";
 import * as fs from 'fs';
-import * as path from 'path';
-
-interface ServerInfo {
-    name: string;
-    path: string;
-    status: 'init' | 'running' | 'stopped';
-}
+import * as npath from 'path';
 
 let servers: ServerInfo[] = [];
 
@@ -20,35 +15,36 @@ export function sayHello({ firstName }: SayHelloProps) {
 
 export class LocalServer {
     private name: string;
-    private pathdir: string;
+    private path: string;
     private status: string;
 
-    constructor({ name, pathdir }: localServerProps) {
+    constructor({ name, path }: localServerProps) {
         if (!name) {
             throw new Error('[NatureSaving] No name for database was defined');
         };
         if (servers.find(server => server.name === name)) {
             throw new Error('[NatureSaving] Database couldnt be created! That name is already in use');
         };
-        if (!pathdir) {
+        if (!path) {
             throw new Error('[NatureSaving] No path for database was defined');
         };
-        if (!fs.existsSync(pathdir)) {
+        const resolvedPath = npath.resolve(path);
+        if (!fs.existsSync(resolvedPath)) {
             throw new Error('[NatureSaving] Path does not exist');
-        };
+        }
         this.name = name;
-        this.pathdir = pathdir;
+        this.path = resolvedPath;
         this.status = 'init'
 
         const init: ServerInfo = {
             name: this.name,
-            path: path.resolve(this.pathdir),
+            path: this.path,
             status: 'init',
         };
 
         servers.push(init);
 
-        console.log(`[NatureSaving] Local server initialized with path: ${pathdir}`);
+        console.log(`[NatureSaving] Local server initialized with path: ${path}`);
     };
 
     public start() {
@@ -57,7 +53,7 @@ export class LocalServer {
         if (index !== -1) {
             servers[index].status = 'running';
             this.status = 'running';
-            console.log(`[NatureSaving] Starting server ${this.name} with path: ${path.resolve(this.pathdir)}`);
+            console.log(`[NatureSaving] Starting server ${this.name} with path: ${npath.resolve(this.path)}`);
         } else {
             console.error(`[NatureSaving] Server ${this.name} not found`);
         }
@@ -69,7 +65,7 @@ export class LocalServer {
         if (index !== -1) {
             servers[index].status = 'stopped';
             this.status = 'stopped';
-            console.log(`[NatureSaving] Stopping server ${this.name} with path: ${path.resolve(this.pathdir)}`);
+            console.log(`[NatureSaving] Stopping server ${this.name} with path: ${npath.resolve(this.path)}`);
         } else {
             console.error(`[NatureSaving] Server ${this.name} not found`);
         }
@@ -78,10 +74,14 @@ export class LocalServer {
 
 export function getLocalServer({ name }: getLocalServerProps) {
     if (!name) {
-        throw new Error(`[NatureSaving] No database with name ${name} was found`);
+        throw new Error(`[NatureSaving] No name for database was defined`);
     };
 
     const server = servers.find(server => server.name === name);
+
+    if (!server) {
+        throw new Error(`[NatureSaving] No database with name ${name} was found`);
+    };
     
     return server || null;
 };
@@ -142,7 +142,7 @@ export function saveData({ server, schema, data }: saveDataProps) {
         throw new Error('[NatureSaving] Data does not match schema');
     }
 
-    const filePath = path.join(server.pathdir, `${schema.name}.js`);
+    const filePath = npath.join(server.path, `${schema.name}.js`);
     let existingData: any[] = [];
 
     if (fs.existsSync(filePath)) {
@@ -165,7 +165,7 @@ export function saveData({ server, schema, data }: saveDataProps) {
 
     const dataString = `const data = ${JSON.stringify(existingData, null, 2)};\n\nmodule.exports = data;`;
 
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.mkdirSync(npath.dirname(filePath), { recursive: true });
     try {
         fs.writeFileSync(filePath, dataString, 'utf8');
     } catch (error) {
@@ -189,7 +189,7 @@ export function readData({ server, schema }: readDataProps) {
         return null;
     }
 
-    const filePath = path.join(server.pathdir, `${schema.name}.js`);
+    const filePath = npath.join(server.path, `${schema.name}.js`);
     let existingData: any[] = [];
 
     if (fs.existsSync(filePath)) {
@@ -232,7 +232,7 @@ export function findData({ server, schema, data }: searchDataProps) {
     //     throw new Error('[NatureSaving] Data does not match schema');
     // }
 
-    const filePath = path.join(server.pathdir, `${schema.name}.js`);
+    const filePath = npath.join(server.path, `${schema.name}.js`);
     let existingData: any[] = [];
 
     if (fs.existsSync(filePath)) {
