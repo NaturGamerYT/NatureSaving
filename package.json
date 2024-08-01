@@ -1,6 +1,6 @@
 {
   "name": "naturesaving",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Local Data saving",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -8,6 +8,7 @@
   "repository": {
     "url": "https://github.com/NaturGamerYT/NatureSaving"
   },
+  "homepage": "https://nature-3.gitbook.io/naturesaving",
   "scripts": {
     "build": "tsup"
   },
